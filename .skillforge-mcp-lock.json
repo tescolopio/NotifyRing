@@ -1,0 +1,30 @@
+{
+  "servers": {
+    "codex/android-adb": "73f59e25e88ebcacc7a965e917a6fd308f323c566f0ff345110783f22b1d2ebd",
+    "codex/android-gradle": "fa885142f1c7d474fa97c10eef0e70e36d7f6ea1ed1da18d1c7ae77058497741",
+    "codex/android-manifest-audit": "75d219e3e85b369be958c113f439e07bfcaff15eaa7ca241faa671caa34c4356",
+    "codex/android-static-analysis": "441b2634eb28f1ffa3bfb8ab01097a989fcc126c62d776bd5417efa9a32df5d9",
+    "codex/codescalpel": "0f0df7b867c24c9ccd2ff0d875177a92203c815281c53dc9f277c35fbfc5ba5a",
+    "copilot/android-adb": "d9dabb97d4f3f8210ddc366fc544009140c9e8adecebe7ceb577cf15e1f2b95d",
+    "copilot/android-gradle": "2ef9b8095ea6be46b52ab88ee41b7f90f423df0d51761147e948073be785dfa1",
+    "copilot/android-manifest-audit": "b6faf9e30d068110679af15ee3e786d17193fb1e6f7c66b44a1e4e6cf6cccc94",
+    "copilot/android-static-analysis": "08a20ab3619f6804019fad713f77e0792037d60e5d797f68be9aa598f284b484",
+    "copilot/codescalpel": "964c200d09c80f49ddfd685b04825604684b7ff70ae239cc4b54dcf5aadb2006",
+    "cursor/android-adb": "6bc7654629a9e1a111b84aef4b77b0afe7ac9c3b5dd1496ad4633069c3e2b56d",
+    "cursor/android-gradle": "af20a0bda88be060a8512fd0156efd9fc10db0f4856ff7ba5c4a1988aa8848ea",
+    "cursor/android-manifest-audit": "5ee97a610c9b48cfaad81428e72bb0b00ce320e6bc19e1ac51439e76bad8d9c0",
+    "cursor/android-static-analysis": "25a59af4b1ceb1668b22904f7cb345f7d0af8b6493d7a1d25969155f00b52a0a",
+    "cursor/codescalpel": "8deb8e6c847f1ac276cdc8a44eea73b63a20ac7e5d57420eb76a0666daeb91e6",
+    "gemini/android-adb": "47f0b502b88f460e6ea2738f476c2c444f767b2f5d30cad2b4c71a34163418c2",
+    "gemini/android-gradle": "ea252d45efb6fe4590a9b04c36f93334e8a306eba12f55a00449d3426705a7c4",
+    "gemini/android-manifest-audit": "df8bce5288fbc67fd23889f9248e68c399fe89bbde4dca0b5d4c6c76c34eee54",
+    "gemini/android-static-analysis": "6588f8ed4e3c40d59f120255e7d4ace3496548917dc5852d0a613bdd783ae73a",
+    "gemini/codescalpel": "a1eba78c4518665cedfe5c702530375131828472d1ec29b6c72319113bf76b90",
+    "mcp-json/android-adb": "47f0b502b88f460e6ea2738f476c2c444f767b2f5d30cad2b4c71a34163418c2",
+    "mcp-json/android-gradle": "ea252d45efb6fe4590a9b04c36f93334e8a306eba12f55a00449d3426705a7c4",
+    "mcp-json/android-manifest-audit": "df8bce5288fbc67fd23889f9248e68c399fe89bbde4dca0b5d4c6c76c34eee54",
+    "mcp-json/android-static-analysis": "6588f8ed4e3c40d59f120255e7d4ace3496548917dc5852d0a613bdd783ae73a",
+    "mcp-json/codescalpel": "a1eba78c4518665cedfe5c702530375131828472d1ec29b6c72319113bf76b90"
+  },
+  "version": 1
+}
