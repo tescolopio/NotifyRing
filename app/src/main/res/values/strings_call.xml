@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="call_status_incoming">Incoming Alert Call</string>
+    <string name="call_status_connected">Alert Call Connected</string>
+    <string name="call_status_ending">Ending Alert Call…</string>
+    <string name="call_status_held_banner">Call on hold — another phone call is active</string>
+
+    <string name="call_speech_warming_up">Preparing voice…</string>
+    <string name="call_speech_preparing">Starting voice readout…</string>
+    <string name="call_speech_speaking">Reading alert aloud</string>
+    <string name="call_speech_paused">Voice readout paused</string>
+    <string name="call_speech_muted">Voice readout muted</string>
+    <string name="call_speech_ready">Tap Repeat to hear again</string>
+    <string name="call_speech_error">Voice readout unavailable</string>
+
+    <string name="call_action_answer">Answer</string>
+    <string name="call_action_decline">Decline</string>
+    <string name="call_action_repeat">Repeat Message</string>
+    <string name="call_action_mute">Mute</string>
+    <string name="call_action_unmute">Unmute</string>
+    <string name="call_action_open_app">Open %1$s</string>
+    <string name="call_action_end">End Call</string>
+    <string name="call_action_close">Close</string>
+
+    <string name="call_route_speaker">Speaker</string>
+    <string name="call_route_earpiece">Earpiece</string>
+    <string name="call_route_bluetooth">Bluetooth</string>
+    <string name="call_route_headset">Headset</string>
+    <string name="call_route_audio">Audio</string>
+    <string name="call_route_speaker_on">Speaker On</string>
+    <string name="call_route_button_label">Audio: %1$s</string>
+
+    <string name="call_message_empty">No additional message details.</string>
+    <string name="call_unknown_app">Alert</string>
+    <string name="call_unknown_sender">Important Notification</string>
+</resources>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Common -->
+    <string name="common_back">Back</string>
+    <string name="common_continue">Continue</string>
+    <string name="common_skip">Skip for Now</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_done">Finish Setup</string>
+    <string name="common_granted">Ready</string>
+    <string name="common_not_granted">Action Needed</string>
+    <string name="common_optional">Optional</string>
+    <string name="common_clear">Clear</string>
+    <string name="common_confirm">Confirm</string>
+    <string name="common_search_apps">Search apps…</string>
+
+    <!-- Onboarding Wizard -->
+    <string name="onboarding_title">NotifyRing Setup</string>
+    <string name="onboarding_step_progress">Step %1$d of %2$d</string>
+
+    <!-- Step 1: Prominent Disclosure -->
+    <string name="onboarding_disclosure_title">Private, On-Device Only</string>
+    <string name="onboarding_disclosure_body">NotifyRing reads notifications ONLY from the apps you choose so it can ring like a phone call and read the message aloud.\n\n• 100% on-device: zero internet permission, zero cloud servers, zero analytics.\n• Nothing ever leaves this phone.\n• Only the last 20 alerts are kept locally on this device for replay.</string>
+    <string name="onboarding_disclosure_accept">I Understand &amp; Continue</string>
+
+    <!-- Step 2: Notification Listener -->
+    <string name="onboarding_listener_title">Allow Notification Access</string>
+    <string name="onboarding_listener_body">NotifyRing needs Notification Access to detect incoming alerts from your selected apps and ring your phone immediately.</string>
+    <string name="onboarding_listener_action">Open Notification Access</string>
+    <string name="onboarding_listener_restricted_title">Android 13+ Restricted Settings Help</string>
+    <string name="onboarding_listener_restricted_body">If NotifyRing is greyed out because it was installed outside the Play Store:\n1. Tap "Open App Info" below.\n2. Tap the three-dot menu (⋮) in the top-right corner.\n3. Tap "Allow restricted settings" and confirm.\n4. Return here and open Notification Access again.</string>
+    <string name="onboarding_listener_open_app_info">Open App Info</string>
+
+    <!-- Step 3: POST_NOTIFICATIONS -->
+    <string name="onboarding_post_notif_title">Allow Call Notifications</string>
+    <string name="onboarding_post_notif_body">Android requires notification permission so NotifyRing can display the incoming alert call screen and ring reliably.</string>
+    <string name="onboarding_post_notif_auto">Automatically granted on this Android version.</string>
+    <string name="onboarding_post_notif_action">Allow Notifications</string>
+    <string name="onboarding_post_notif_settings_action">Open Notification Settings</string>
+
+    <!-- Step 4: USE_FULL_SCREEN_INTENT -->
+    <string name="onboarding_fsi_title">Allow Full-Screen Calls</string>
+    <string name="onboarding_fsi_body">Enable full-screen alerts so incoming notifications appear like a full-screen phone call even when the screen is locked.</string>
+    <string name="onboarding_fsi_auto">Automatically enabled on this Android version.</string>
+    <string name="onboarding_fsi_action">Allow Full-Screen Alerts</string>
+
+    <!-- Step 5: BLUETOOTH_CONNECT -->
+    <string name="onboarding_bt_title">Bluetooth Hearing Aids &amp; Headsets</string>
+    <string name="onboarding_bt_body">Allow Bluetooth connection permission if you want NotifyRing to speak alerts through paired hearing aids or a Bluetooth headset. You can skip this step if not needed.</string>
+    <string name="onboarding_bt_auto">Not required on this Android version.</string>
+    <string name="onboarding_bt_action">Allow Bluetooth Audio</string>
+
+    <!-- Step 6: Battery Optimization Guidance -->
+    <string name="onboarding_battery_title">Keep Alerts Reliable in Background</string>
+    <string name="onboarding_battery_body">Some phones pause apps in the background to save battery. For best reliability, set NotifyRing to "Unrestricted" in Battery Settings.\n\n• Samsung phones: Open Settings → Battery → Background usage limits → Never sleeping apps → add NotifyRing.\n• Xiaomi / Redmi phones: Open App Info → enable "Autostart" and set Battery saver to "No restrictions".</string>
+    <string name="onboarding_battery_action">Open Battery Settings</string>
+    <string name="onboarding_battery_already_unrestricted">Battery optimization is already set to Unrestricted.</string>
+
+    <!-- Step 7: App Picker -->
+    <string name="onboarding_apps_title">Choose Apps to Monitor</string>
+    <string name="onboarding_apps_body">Select at least one app whose notifications should ring like an incoming call.</string>
+    <string name="onboarding_apps_selected_count">%1$d app(s) selected</string>
+    <string name="onboarding_apps_empty">No matching apps found.</string>
+
+    <!-- Step 8: Test Call -->
+    <string name="onboarding_test_title">Try a Test Call</string>
+    <string name="onboarding_test_body">Tap the button below to trigger a real NotifyRing test call. Answer it to hear how alerts will sound, then finish setup.</string>
+    <string name="onboarding_test_action">Start Test Call</string>
+    <string name="onboarding_test_triggered">Test call started! You can now finish setup.</string>
+    <string name="onboarding_test_sender">Test Alert</string>
+    <string name="onboarding_test_message">This is a NotifyRing test call. Your important notifications will ring and be read aloud just like this.</string>
+
+    <!-- Senior Home Screen -->
+    <string name="home_title">NotifyRing</string>
+    <string name="home_status_protected_title">Protection Active</string>
+    <string name="home_status_protected_subtitle">Monitoring %1$d app(s) on this device.</string>
+    <string name="home_status_degraded_title">Attention Needed</string>
+    <string name="home_status_degraded_subtitle">A required permission needs to be restored so alerts can ring.</string>
+    <string name="home_degraded_listener">Notification Access is turned off. Alerts cannot be detected.</string>
+    <string name="home_degraded_post_notif">Notifications are turned off. Incoming alert calls cannot be shown.</string>
+    <string name="home_degraded_fsi">Full-screen alerts are turned off. Calls may not appear over the lock screen.</string>
+    <string name="home_degraded_channel">The Alert Calls notification channel is silenced or lowered.</string>
+    <string name="home_fix_now">Fix Now</string>
+    <string name="home_test_call_button">Test Call</string>
+    <string name="home_caregiver_settings_button">Caregiver Settings</string>
+    <string name="home_recent_alerts_title">Recent Alerts</string>
+    <string name="home_recent_alerts_empty">No alerts yet. Tap "Test Call" above to try it out.</string>
+    <string name="home_call_replay_button">Call &amp; Replay</string>
+    <string name="home_alert_answered">Answered</string>
+    <string name="home_alert_missed">Missed</string>
+
+    <!-- Caregiver PIN Gate -->
+    <string name="pin_dialog_title">Caregiver PIN</string>
+    <string name="pin_dialog_subtitle">Enter the 4-digit caregiver PIN to open settings.</string>
+    <string name="pin_error_invalid">Incorrect PIN. Please try again.</string>
+    <string name="pin_error_mismatch">PINs do not match. Please try again.</string>
+    <string name="pin_error_format">Please enter exactly 4 digits.</string>
+    <string name="pin_backspace">Delete</string>
+
+    <!-- Caregiver Settings -->
+    <string name="settings_title">Caregiver Settings</string>
+    <string name="settings_section_apps">Monitored Apps (%1$d)</string>
+    <string name="settings_section_timing">Call &amp; Speech Settings</string>
+    <string name="settings_debounce_label">Notification Debounce: %1$.1f s</string>
+    <string name="settings_ring_timeout_label">Ring Timeout: %1$d s</string>
+    <string name="settings_auto_speaker_label">Auto-Speaker on Answer</string>
+    <string name="settings_auto_speaker_desc">Automatically switch to speakerphone when a call is answered.</string>
+    <string name="settings_speech_rate_label">Speech Speed: %1$.2fx</string>
+    <string name="settings_section_pin">Caregiver PIN Lock</string>
+    <string name="settings_pin_status_set">4-digit PIN lock is enabled.</string>
+    <string name="settings_pin_status_unset">No PIN set. Anyone can open Caregiver Settings.</string>
+    <string name="settings_pin_set_button">Set 4-Digit PIN</string>
+    <string name="settings_pin_change_button">Change PIN</string>
+    <string name="settings_pin_clear_button">Remove PIN</string>
+    <string name="settings_pin_create_title">Create 4-Digit PIN</string>
+    <string name="settings_pin_confirm_title">Confirm 4-Digit PIN</string>
+    <string name="settings_pin_clear_confirm_title">Remove Caregiver PIN?</string>
+    <string name="settings_pin_clear_confirm_body">Caregiver Settings will open without asking for a PIN.</string>
+    <string name="settings_section_maintenance">Setup &amp; History</string>
+    <string name="settings_rerun_onboarding">Re-run Setup Wizard</string>
+    <string name="settings_clear_log">Clear Recent Alerts</string>
+    <string name="settings_clear_log_confirm_title">Clear Recent Alerts?</string>
+    <string name="settings_clear_log_confirm_body">This removes all saved recent alert entries from this device.</string>
+</resources>

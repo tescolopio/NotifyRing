@@ -1,15 +1,23 @@
 package com.notifyring.app
 
-import android.app.Activity
 import android.os.Bundle
-import android.widget.TextView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import com.notifyring.app.ui.navigation.NotifyRingNavHost
+import com.notifyring.app.ui.theme.NotifyRingTheme
 
-class MainActivity : Activity() {
+class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(TextView(this).apply {
-            text = getString(R.string.setup_placeholder)
-            textSize = 24f
-        })
+        enableEdgeToEdge()
+
+        val container = (application as NotifyRingApplication).container
+        setContent {
+            NotifyRingTheme {
+                NotifyRingNavHost(container = container)
+            }
+        }
     }
 }

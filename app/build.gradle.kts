@@ -1,4 +1,7 @@
+import org.gradle.api.GradleException
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.w3c.dom.Element
+import javax.xml.parsers.DocumentBuilderFactory
 
 plugins {
     alias(libs.plugins.android.application)
@@ -78,4 +81,81 @@ dependencies {
 
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
+}
+
+val verifyMergedManifestPrivacy = tasks.register("verifyMergedManifestPrivacy") {
+    group = "verification"
+    description = "Audits merged AndroidManifest.xml files to enforce zero forbidden permissions."
+    dependsOn("processDebugManifest")
+
+    val debugManifestsDir = layout.buildDirectory.dir("intermediates/merged_manifests/debug")
+    val releaseManifestsDir = layout.buildDirectory.dir("intermediates/merged_manifests/release")
+
+    doLast {
+        val forbiddenPermissions = setOf(
+            "android.permission.INTERNET",
+            "android.permission.QUERY_ALL_PACKAGES",
+            "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
+        )
+
+        fun collectManifests(rootDir: java.io.File): List<java.io.File> {
+            if (!rootDir.exists()) return emptyList()
+            return rootDir.walkTopDown()
+                .filter { it.isFile && it.name == "AndroidManifest.xml" }
+                .sortedBy { it.path }
+                .toList()
+        }
+
+        val debugManifests = collectManifests(debugManifestsDir.get().asFile)
+        if (debugManifests.isEmpty()) {
+            throw GradleException(
+                "verifyMergedManifestPrivacy: No debug merged AndroidManifest.xml found under ${debugManifestsDir.get().asFile}"
+            )
+        }
+        val releaseManifests = collectManifests(releaseManifestsDir.get().asFile)
+        val manifestsToAudit = debugManifests + releaseManifests
+
+        val androidNs = "http://schemas.android.com/apk/res/android"
+        val factory = DocumentBuilderFactory.newInstance().apply {
+            isNamespaceAware = true
+            setFeature("http://apache.org/xml/features/disallow-doctype-decl", true)
+        }
+        val builder = factory.newDocumentBuilder()
+        val violations = mutableListOf<String>()
+
+        manifestsToAudit.forEach { manifestFile ->
+            val doc = builder.parse(manifestFile)
+            listOf("uses-permission", "uses-permission-sdk-23").forEach { tagName ->
+                val nodes = doc.getElementsByTagName(tagName)
+                for (index in 0 until nodes.length) {
+                    val element = nodes.item(index) as? Element ?: continue
+                    val permissionName = element.getAttributeNS(androidNs, "name")
+                        .ifEmpty { element.getAttribute("android:name") }
+                        .trim()
+                    if (permissionName in forbiddenPermissions) {
+                        violations += "${manifestFile.path}: forbidden <$tagName android:name=\"$permissionName\"/>"
+                    }
+                }
+            }
+        }
+
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                "Merged manifest privacy audit FAILED (${violations.size} violation(s)):\n" +
+                    violations.joinToString(separator = "\n") { "  - $it" }
+            )
+        }
+
+        logger.lifecycle(
+            "verifyMergedManifestPrivacy PASSED: verified ${manifestsToAudit.size} merged manifest(s) " +
+                "with 0 forbidden permissions:"
+        )
+        manifestsToAudit.forEach { manifestFile ->
+            logger.lifecycle("  - ${manifestFile.path}")
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(verifyMergedManifestPrivacy)
 }
