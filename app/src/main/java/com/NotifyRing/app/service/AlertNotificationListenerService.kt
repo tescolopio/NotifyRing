@@ -1,11 +1,11 @@
-package com.NotifyRing.app.service
+package com.notifyring.app.service
 
 import android.app.Notification
 import android.content.pm.PackageManager
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import com.NotifyRing.app.telecom.AlertPayload
-import com.NotifyRing.app.telecom.LocalCallManager
+import com.notifyring.app.telecom.AlertPayload
+import com.notifyring.app.telecom.LocalCallManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -62,7 +62,12 @@ class AlertNotificationListenerService : NotificationListenerService() {
             batches.remove(key)
             LocalCallManager.startIncomingCall(
                 applicationContext,
-                AlertPayload(appName, sender, messages.joinToString(". "))
+                AlertPayload(
+                    appName = appName,
+                    packageName = sbn.packageName,
+                    sender = sender,
+                    message = messages.joinToString(". ")
+                )
             )
         }
         batches[key] = Batch(messages, job)

@@ -1,4 +1,4 @@
-package com.NotifyRing.app
+package com.notifyring.app
 
 import android.app.Activity
 import android.os.Bundle
@@ -8,7 +8,7 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(TextView(this).apply {
-            text = "NotifyRing setup is not yet available."
+            text = getString(R.string.setup_placeholder)
             textSize = 24f
         })
     }

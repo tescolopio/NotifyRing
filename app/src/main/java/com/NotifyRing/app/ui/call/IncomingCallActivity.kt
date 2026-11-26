@@ -1,4 +1,4 @@
-package com.NotifyRing.app.ui.call
+package com.notifyring.app.ui.call
 
 import android.app.Activity
 
