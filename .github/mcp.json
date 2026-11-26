@@ -1,0 +1,61 @@
+{
+  "mcpServers": {
+    "codescalpel": {
+      "type": "local",
+      "command": "uvx",
+      "args": [
+        "--with",
+        "mcp==1.30.0",
+        "codescalpel@2.1.4",
+        "mcp"
+      ],
+      "tools": [
+        "*"
+      ]
+    },
+    "android-gradle": {
+      "type": "local",
+      "command": "python3",
+      "args": [
+        "-c",
+        "import pathlib,runpy,sys;p=next((q for q in (pathlib.Path('external/SkillForge/mcp/scripts/android_gradle_mcp.py'),pathlib.Path('mcp/scripts/android_gradle_mcp.py')) if q.is_file()),None);sys.exit('android_gradle_mcp.py not found') if p is None else runpy.run_path(str(p),run_name='__main__')"
+      ],
+      "tools": [
+        "*"
+      ]
+    },
+    "android-adb": {
+      "type": "local",
+      "command": "python3",
+      "args": [
+        "-c",
+        "import pathlib,runpy,sys;p=next((q for q in (pathlib.Path('external/SkillForge/mcp/scripts/android_adb_mcp.py'),pathlib.Path('mcp/scripts/android_adb_mcp.py')) if q.is_file()),None);sys.exit('android_adb_mcp.py not found') if p is None else runpy.run_path(str(p),run_name='__main__')"
+      ],
+      "tools": [
+        "*"
+      ]
+    },
+    "android-manifest-audit": {
+      "type": "local",
+      "command": "python3",
+      "args": [
+        "-c",
+        "import pathlib,runpy,sys;p=next((q for q in (pathlib.Path('external/SkillForge/mcp/scripts/android_manifest_audit_mcp.py'),pathlib.Path('mcp/scripts/android_manifest_audit_mcp.py')) if q.is_file()),None);sys.exit('android_manifest_audit_mcp.py not found') if p is None else runpy.run_path(str(p),run_name='__main__')"
+      ],
+      "tools": [
+        "*"
+      ]
+    },
+    "android-static-analysis": {
+      "type": "local",
+      "command": "python3",
+      "args": [
+        "-c",
+        "import pathlib,runpy,sys;p=next((q for q in (pathlib.Path('external/SkillForge/mcp/scripts/android_static_analysis_mcp.py'),pathlib.Path('mcp/scripts/android_static_analysis_mcp.py')) if q.is_file()),None);sys.exit('android_static_analysis_mcp.py not found') if p is None else runpy.run_path(str(p),run_name='__main__')"
+      ],
+      "tools": [
+        "*"
+      ]
+    }
+  }
+}

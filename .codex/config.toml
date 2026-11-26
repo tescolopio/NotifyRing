@@ -1,0 +1,29 @@
+# >>> skillforge mcp: codescalpel (managed; edit mcp/servers in SkillForge) >>>
+[mcp_servers.codescalpel]
+command = "uvx"
+args = ["--with", "mcp==1.30.0", "codescalpel@2.1.4", "mcp"]
+# <<< skillforge mcp: codescalpel <<<
+
+# >>> skillforge mcp: android-gradle (managed; edit mcp/servers in SkillForge) >>>
+[mcp_servers.android-gradle]
+command = "python3"
+args = ["-c", "import pathlib,runpy,sys;p=next((q for q in (pathlib.Path('external/SkillForge/mcp/scripts/android_gradle_mcp.py'),pathlib.Path('mcp/scripts/android_gradle_mcp.py')) if q.is_file()),None);sys.exit('android_gradle_mcp.py not found') if p is None else runpy.run_path(str(p),run_name='__main__')"]
+# <<< skillforge mcp: android-gradle <<<
+
+# >>> skillforge mcp: android-adb (managed; edit mcp/servers in SkillForge) >>>
+[mcp_servers.android-adb]
+command = "python3"
+args = ["-c", "import pathlib,runpy,sys;p=next((q for q in (pathlib.Path('external/SkillForge/mcp/scripts/android_adb_mcp.py'),pathlib.Path('mcp/scripts/android_adb_mcp.py')) if q.is_file()),None);sys.exit('android_adb_mcp.py not found') if p is None else runpy.run_path(str(p),run_name='__main__')"]
+# <<< skillforge mcp: android-adb <<<
+
+# >>> skillforge mcp: android-manifest-audit (managed; edit mcp/servers in SkillForge) >>>
+[mcp_servers.android-manifest-audit]
+command = "python3"
+args = ["-c", "import pathlib,runpy,sys;p=next((q for q in (pathlib.Path('external/SkillForge/mcp/scripts/android_manifest_audit_mcp.py'),pathlib.Path('mcp/scripts/android_manifest_audit_mcp.py')) if q.is_file()),None);sys.exit('android_manifest_audit_mcp.py not found') if p is None else runpy.run_path(str(p),run_name='__main__')"]
+# <<< skillforge mcp: android-manifest-audit <<<
+
+# >>> skillforge mcp: android-static-analysis (managed; edit mcp/servers in SkillForge) >>>
+[mcp_servers.android-static-analysis]
+command = "python3"
+args = ["-c", "import pathlib,runpy,sys;p=next((q for q in (pathlib.Path('external/SkillForge/mcp/scripts/android_static_analysis_mcp.py'),pathlib.Path('mcp/scripts/android_static_analysis_mcp.py')) if q.is_file()),None);sys.exit('android_static_analysis_mcp.py not found') if p is None else runpy.run_path(str(p),run_name='__main__')"]
+# <<< skillforge mcp: android-static-analysis <<<

@@ -1,0 +1,3 @@
+[submodule "external/SkillForge"]
+	path = external/SkillForge
+	url = https://github.com/tescolopio/SkillForge.git
