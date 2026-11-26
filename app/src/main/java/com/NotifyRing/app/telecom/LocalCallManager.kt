@@ -14,17 +14,27 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.ArrayDeque
 
 data class AlertPayload(val appName: String, val sender: String, val message: String)
 
 object LocalCallManager {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val busy = AtomicBoolean(false)
+    private val pendingCalls = ArrayDeque<Pair<Context, AlertPayload>>()
+    private var busy = false
     private var call: CallControlScope? = null
 
     fun startIncomingCall(context: Context, payload: AlertPayload) {
-        if (!busy.compareAndSet(false, true)) return
+        scope.launch {
+            pendingCalls.addLast(context.applicationContext to payload)
+            startNextCall()
+        }
+    }
+
+    private fun startNextCall() {
+        if (busy) return
+        val (context, payload) = pendingCalls.pollFirst() ?: return
+        busy = true
         scope.launch {
             try {
                 val manager = CallsManager(context)
@@ -59,7 +69,8 @@ object LocalCallManager {
             } finally {
                 call = null
                 context.stopService(Intent(context, CallForegroundService::class.java))
-                busy.set(false)
+                busy = false
+                startNextCall()
             }
         }
     }
