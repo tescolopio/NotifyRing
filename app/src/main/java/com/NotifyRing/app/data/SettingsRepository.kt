@@ -26,6 +26,10 @@ interface SettingsRepository {
     suspend fun setRingTimeoutSeconds(ringTimeoutSeconds: Int)
     suspend fun setAutoSpeakerEnabled(enabled: Boolean)
     suspend fun setSpeechRate(speechRate: Float)
+    suspend fun setSpeechPitch(pitch: Float)
+    suspend fun setTtsEnginePackage(enginePackage: String?)
+    suspend fun setTtsVoiceName(voiceName: String?)
+    suspend fun setTtsSelection(enginePackage: String?, voiceName: String?)
     suspend fun setOnboardingCompleted(completed: Boolean)
     suspend fun setCaregiverPin(pin: String)
     suspend fun clearCaregiverPin()
@@ -60,6 +64,15 @@ class DataStoreSettingsRepository(
                 autoSpeakerEnabled = preferences[Keys.AUTO_SPEAKER_ENABLED] ?: false,
                 speechRate = UserSettings.clampSpeechRate(
                     preferences[Keys.SPEECH_RATE] ?: UserSettings.DEFAULT_SPEECH_RATE
+                ),
+                speechPitch = UserSettings.clampSpeechPitch(
+                    preferences[Keys.SPEECH_PITCH] ?: UserSettings.DEFAULT_SPEECH_PITCH
+                ),
+                ttsEnginePackage = UserSettings.normalizeOptionalString(
+                    preferences[Keys.TTS_ENGINE_PACKAGE]
+                ),
+                ttsVoiceName = UserSettings.normalizeOptionalString(
+                    preferences[Keys.TTS_VOICE_NAME]
                 ),
                 onboardingCompleted = preferences[Keys.ONBOARDING_COMPLETED] ?: false,
                 caregiverPinHash = preferences[Keys.CAREGIVER_PIN_HASH]
@@ -122,6 +135,51 @@ class DataStoreSettingsRepository(
         }
     }
 
+    override suspend fun setSpeechPitch(pitch: Float) {
+        dataStore.edit { preferences ->
+            preferences[Keys.SPEECH_PITCH] = UserSettings.clampSpeechPitch(pitch)
+        }
+    }
+
+    override suspend fun setTtsEnginePackage(enginePackage: String?) {
+        val normalized = UserSettings.normalizeOptionalString(enginePackage)
+        dataStore.edit { preferences ->
+            if (normalized == null) {
+                preferences.remove(Keys.TTS_ENGINE_PACKAGE)
+            } else {
+                preferences[Keys.TTS_ENGINE_PACKAGE] = normalized
+            }
+        }
+    }
+
+    override suspend fun setTtsVoiceName(voiceName: String?) {
+        val normalized = UserSettings.normalizeOptionalString(voiceName)
+        dataStore.edit { preferences ->
+            if (normalized == null) {
+                preferences.remove(Keys.TTS_VOICE_NAME)
+            } else {
+                preferences[Keys.TTS_VOICE_NAME] = normalized
+            }
+        }
+    }
+
+    override suspend fun setTtsSelection(enginePackage: String?, voiceName: String?) {
+        val normalizedEngine = UserSettings.normalizeOptionalString(enginePackage)
+        val normalizedVoice = UserSettings.normalizeOptionalString(voiceName)
+        dataStore.edit { preferences ->
+            if (normalizedEngine == null) {
+                preferences.remove(Keys.TTS_ENGINE_PACKAGE)
+            } else {
+                preferences[Keys.TTS_ENGINE_PACKAGE] = normalizedEngine
+            }
+            if (normalizedVoice == null) {
+                preferences.remove(Keys.TTS_VOICE_NAME)
+            } else {
+                preferences[Keys.TTS_VOICE_NAME] = normalizedVoice
+            }
+        }
+    }
+
     override suspend fun setOnboardingCompleted(completed: Boolean) {
         dataStore.edit { preferences ->
             preferences[Keys.ONBOARDING_COMPLETED] = completed
@@ -152,6 +210,9 @@ class DataStoreSettingsRepository(
         val RING_TIMEOUT_SECONDS = intPreferencesKey("ring_timeout_seconds")
         val AUTO_SPEAKER_ENABLED = booleanPreferencesKey("auto_speaker_enabled")
         val SPEECH_RATE = floatPreferencesKey("speech_rate")
+        val SPEECH_PITCH = floatPreferencesKey("speech_pitch")
+        val TTS_ENGINE_PACKAGE = stringPreferencesKey("tts_engine_package")
+        val TTS_VOICE_NAME = stringPreferencesKey("tts_voice_name")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val CAREGIVER_PIN_HASH = stringPreferencesKey("caregiver_pin_hash")
     }

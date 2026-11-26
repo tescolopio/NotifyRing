@@ -1,6 +1,7 @@
 package com.notifyring.app.di
 
 import android.content.Context
+import android.media.AudioAttributes
 import androidx.datastore.core.DataStore
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
@@ -12,7 +13,11 @@ import com.notifyring.app.data.DataStoreAlertCallLogStore
 import com.notifyring.app.data.DataStoreSettingsRepository
 import com.notifyring.app.data.SettingsRepository
 import com.notifyring.app.speech.AndroidTextToSpeechAdapter
+import com.notifyring.app.speech.AndroidTtsSettingsBridge
+import com.notifyring.app.speech.AndroidVoiceCatalogProvider
 import com.notifyring.app.speech.CallSpeechEngine
+import com.notifyring.app.speech.TtsSettingsBridge
+import com.notifyring.app.speech.VoiceCatalogProvider
 import com.notifyring.app.telecom.AndroidCallForegroundUiBridge
 import com.notifyring.app.telecom.AndroidCoreTelecomDriver
 import com.notifyring.app.telecom.LocalCallManager
@@ -61,12 +66,26 @@ open class AppContainer(context: Context) {
         }
     }
 
+    val voiceCatalogProvider: VoiceCatalogProvider by lazy {
+        AndroidVoiceCatalogProvider(appContext)
+    }
+
+    val ttsSettingsBridge: TtsSettingsBridge by lazy {
+        AndroidTtsSettingsBridge()
+    }
+
     val callSpeechEngine: CallSpeechEngine by lazy {
         CallSpeechEngine(
             ttsAdapter = AndroidTextToSpeechAdapter(appContext),
             callAudioController = rawLocalCallManager,
             settingsRepository = settingsRepository,
-            alertCallLogStore = alertCallLogStore
+            alertCallLogStore = alertCallLogStore,
+            previewAdapterFactory = {
+                AndroidTextToSpeechAdapter(
+                    context = appContext,
+                    audioUsage = AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY
+                )
+            }
         ).also { engine ->
             rawLocalCallManager.addLifecycleListener(engine)
         }

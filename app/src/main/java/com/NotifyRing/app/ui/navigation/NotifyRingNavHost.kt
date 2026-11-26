@@ -19,12 +19,14 @@ import com.notifyring.app.di.AppContainer
 import com.notifyring.app.ui.home.SeniorHomeScreen
 import com.notifyring.app.ui.onboarding.OnboardingWizardScreen
 import com.notifyring.app.ui.settings.CaregiverSettingsScreen
+import com.notifyring.app.ui.settings.VoiceSpeechScreen
 import kotlinx.coroutines.flow.first
 
 object NotifyRingRoutes {
     const val ONBOARDING = "onboarding"
     const val SENIOR_HOME = "senior_home"
     const val CAREGIVER_SETTINGS = "caregiver_settings"
+    const val VOICE_SPEECH = "voice_speech"
 }
 
 @Composable
@@ -67,6 +69,11 @@ fun NotifyRingNavHost(
             OnboardingWizardScreen(
                 settingsRepository = container.settingsRepository,
                 localCallManager = container.localCallManager,
+                onOpenVoiceSpeech = {
+                    navController.navigate(NotifyRingRoutes.VOICE_SPEECH) {
+                        launchSingleTop = true
+                    }
+                },
                 onOnboardingComplete = {
                     navController.navigate(NotifyRingRoutes.SENIOR_HOME) {
                         popUpTo(NotifyRingRoutes.ONBOARDING) { inclusive = true }
@@ -94,12 +101,27 @@ fun NotifyRingNavHost(
                 settingsRepository = container.settingsRepository,
                 alertCallLogStore = container.alertCallLogStore,
                 onNavigateBack = { navController.popBackStack() },
+                onOpenVoiceSpeech = {
+                    navController.navigate(NotifyRingRoutes.VOICE_SPEECH) {
+                        launchSingleTop = true
+                    }
+                },
                 onRerunOnboarding = {
                     navController.navigate(NotifyRingRoutes.ONBOARDING) {
                         popUpTo(NotifyRingRoutes.SENIOR_HOME) { inclusive = false }
                         launchSingleTop = true
                     }
                 }
+            )
+        }
+
+        composable(NotifyRingRoutes.VOICE_SPEECH) {
+            VoiceSpeechScreen(
+                settingsRepository = container.settingsRepository,
+                voiceCatalogProvider = container.voiceCatalogProvider,
+                callSpeechEngine = container.callSpeechEngine,
+                ttsSettingsBridge = container.ttsSettingsBridge,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

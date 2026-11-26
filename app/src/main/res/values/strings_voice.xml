@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="voice_screen_title">Voice &amp; Speech</string>
+    <string name="voice_screen_subtitle">Choose an offline voice, adjust speaking speed and pitch, or download more voices from your phone.</string>
+    <string name="voice_section_engine">Speech Engine</string>
+    <string name="voice_engine_system_default">System Default</string>
+    <string name="voice_engine_default_badge">Default</string>
+    <string name="voice_section_voices">Installed Offline Voices</string>
+    <string name="voice_loading">Checking installed offline voices…</string>
+    <string name="voice_empty_title">No offline voices found</string>
+    <string name="voice_empty_body">Download an offline voice pack below, then return here and your new voices will appear automatically.</string>
+    <string name="voice_selected_badge">Selected</string>
+    <string name="voice_preview_button">Preview</string>
+    <string name="voice_stop_button">Stop</string>
+    <string name="voice_preview_sample">Hello. This is how NotifyRing will read your alert calls.</string>
+    <string name="voice_section_tuning">Speed &amp; Pitch</string>
+    <string name="voice_rate_label">Speech speed: %1$.2fx</string>
+    <string name="voice_pitch_label">Voice pitch: %1$.2fx</string>
+    <string name="voice_preview_current_button">Preview Current Voice</string>
+    <string name="voice_section_bridge">More Offline Voices</string>
+    <string name="voice_download_button">Download More Offline Voices</string>
+    <string name="voice_system_settings_button">Open Phone Speech Settings</string>
+    <string name="voice_bridge_unavailable">Speech settings are not available on this device.</string>
+    <string name="voice_refresh_content_desc">Refresh installed voices</string>
+
+    <string name="settings_section_voice">Voice &amp; Speech</string>
+    <string name="settings_voice_desc">Pick an offline voice, adjust speed and pitch, or download more voices.</string>
+    <string name="settings_voice_button">Choose Voice &amp; Speech</string>
+
+    <string name="onboarding_test_voice_button">Choose or Preview Voice</string>
+</resources>

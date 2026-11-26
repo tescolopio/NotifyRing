@@ -612,13 +612,145 @@ class CallSpeechEngineTest {
         managerScope.cancel()
     }
 
+    @Test
+    fun `saved engine voice and pitch propagate to TTS and missing voice falls back gracefully`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val tts = FakeTtsEngineAdapter(autoCompleteInit = true).apply {
+            voiceResult = false // Simulate saved voice missing -> adapter falls back cleanly.
+        }
+        val audioController = FakeCallAudioController()
+        val settingsRepo = FakeSettingsRepository(
+            UserSettings(
+                speechRate = 1.1f,
+                speechPitch = 1.2f,
+                ttsEnginePackage = "com.google.android.tts",
+                ttsVoiceName = "en-us-x-missing-local"
+            )
+        )
+        val logStore = FakeAlertCallLogStore()
+
+        val engine = CallSpeechEngine(
+            ttsAdapter = tts,
+            callAudioController = audioController,
+            settingsRepository = settingsRepo,
+            alertCallLogStore = logStore,
+            dispatcher = dispatcher
+        )
+
+        val callId = UUID.randomUUID()
+        engine.onCallRinging(callId, samplePayload)
+        runCurrent()
+        assertEquals("com.google.android.tts", tts.lastEnginePackage)
+
+        engine.onCallAnswered(callId, samplePayload)
+        advanceTimeBy(1_500L)
+        runCurrent()
+
+        assertEquals(1, tts.spokenUtterances.size)
+        assertEquals("en-us-x-missing-local", tts.lastVoiceName)
+        assertEquals(1.1f, tts.lastSpeechRate ?: 0f, 0.0001f)
+        assertEquals(1.2f, tts.lastSpeechPitch ?: 0f, 0.0001f)
+        assertTrue(engine.speechState.value is SpeechEngineState.Speaking)
+
+        engine.onCallEnded(callId, samplePayload, CallDisconnectReason.LOCAL, answered = true)
+        runCurrent()
+        engine.close()
+    }
+
+    @Test
+    fun `previewVoice is isolated from call TTS stops on stopPreview and onCallRinging`() = runTest {
+        val dispatcher = StandardTestDispatcher(testScheduler)
+        val callTts = FakeTtsEngineAdapter(autoCompleteInit = true)
+        val previewAdapters = mutableListOf<FakeTtsEngineAdapter>()
+        val audioController = FakeCallAudioController()
+        val settingsRepo = FakeSettingsRepository()
+        val logStore = FakeAlertCallLogStore()
+
+        val engine = CallSpeechEngine(
+            ttsAdapter = callTts,
+            callAudioController = audioController,
+            settingsRepository = settingsRepo,
+            alertCallLogStore = logStore,
+            dispatcher = dispatcher,
+            previewAdapterFactory = {
+                FakeTtsEngineAdapter(autoCompleteInit = true).also { previewAdapters += it }
+            }
+        )
+
+        engine.previewVoice(
+            enginePackage = "com.google.android.tts",
+            voiceName = "en-us-x-sfg-local",
+            rate = 0.9f,
+            pitch = 1.15f,
+            sampleText = "Sample alert voice preview."
+        )
+        runCurrent()
+
+        // Active call TTS and call log remain completely untouched.
+        assertEquals(0, callTts.initializeCalls)
+        assertTrue(callTts.spokenUtterances.isEmpty())
+        assertTrue(logStore.entries.first().isEmpty())
+        assertEquals(SpeechEngineState.Idle, engine.speechState.value)
+
+        // Preview adapter received all parameters and is speaking.
+        assertEquals(1, previewAdapters.size)
+        val firstPreview = previewAdapters[0]
+        assertEquals("com.google.android.tts", firstPreview.lastEnginePackage)
+        assertEquals("en-us-x-sfg-local", firstPreview.lastVoiceName)
+        assertEquals(0.9f, firstPreview.lastSpeechRate ?: 0f, 0.0001f)
+        assertEquals(1.15f, firstPreview.lastSpeechPitch ?: 0f, 0.0001f)
+        assertEquals(1, firstPreview.spokenUtterances.size)
+        assertEquals(VoicePreviewState.Speaking("en-us-x-sfg-local"), engine.previewState.value)
+
+        // Explicit stopPreview stops and shuts down preview adapter cleanly.
+        engine.stopPreview()
+        runCurrent()
+        assertEquals(1, firstPreview.stopCalls)
+        assertEquals(1, firstPreview.shutdownCalls)
+        assertEquals(VoicePreviewState.Idle, engine.previewState.value)
+
+        // Second preview stops automatically when an incoming call begins ringing.
+        engine.previewVoice(
+            enginePackage = null,
+            voiceName = "en-us-x-tpf-local",
+            rate = 1.0f,
+            pitch = 1.0f
+        )
+        runCurrent()
+        assertEquals(2, previewAdapters.size)
+        val secondPreview = previewAdapters[1]
+        assertEquals(VoicePreviewState.Speaking("en-us-x-tpf-local"), engine.previewState.value)
+
+        val callId = UUID.randomUUID()
+        engine.onCallRinging(callId, samplePayload)
+        runCurrent()
+
+        assertEquals(1, secondPreview.stopCalls)
+        assertEquals(1, secondPreview.shutdownCalls)
+        assertEquals(VoicePreviewState.Idle, engine.previewState.value)
+        assertEquals(SpeechEngineState.WarmingUp(callId), engine.speechState.value)
+
+        // Preview requests while a call is active are ignored.
+        engine.previewVoice(null, "en-us-x-tpf-local", 1.0f, 1.0f)
+        runCurrent()
+        assertEquals(2, previewAdapters.size)
+
+        engine.onCallEnded(callId, CallDisconnectReason.LOCAL)
+        runCurrent()
+        engine.close()
+    }
+
     private class FakeTtsEngineAdapter(
         private val autoCompleteInit: Boolean = true
     ) : TtsEngineAdapter {
         var initializeCalls: Int = 0
         var stopCalls: Int = 0
         var shutdownCalls: Int = 0
+        var lastEnginePackage: String? = null
+        var lastVoiceName: String? = null
         var lastSpeechRate: Float? = null
+        var lastSpeechPitch: Float? = null
+        var voiceResult: Boolean = true
         val spokenUtterances = mutableListOf<Pair<String, String>>()
 
         private var isReady: Boolean = false
@@ -626,8 +758,9 @@ class CallSpeechEngineTest {
         private var currentOnDone: (() -> Unit)? = null
         private var currentOnError: ((String?) -> Unit)? = null
 
-        override fun initialize(onReady: (Boolean) -> Unit) {
+        override fun initialize(enginePackage: String?, onReady: (Boolean) -> Unit) {
             initializeCalls += 1
+            lastEnginePackage = enginePackage
             if (isReady) {
                 onReady(true)
                 return
@@ -647,8 +780,17 @@ class CallSpeechEngineTest {
             callbacks.forEach { it(ready) }
         }
 
+        override fun setVoice(voiceName: String?): Boolean {
+            lastVoiceName = voiceName
+            return voiceResult
+        }
+
         override fun setSpeechRate(rate: Float) {
             lastSpeechRate = rate
+        }
+
+        override fun setSpeechPitch(pitch: Float) {
+            lastSpeechPitch = pitch
         }
 
         override fun speak(
@@ -776,6 +918,29 @@ class CallSpeechEngineTest {
 
         override suspend fun setSpeechRate(speechRate: Float) {
             state.value = state.value.copy(speechRate = UserSettings.clampSpeechRate(speechRate))
+        }
+
+        override suspend fun setSpeechPitch(pitch: Float) {
+            state.value = state.value.copy(speechPitch = UserSettings.clampSpeechPitch(pitch))
+        }
+
+        override suspend fun setTtsEnginePackage(enginePackage: String?) {
+            state.value = state.value.copy(
+                ttsEnginePackage = UserSettings.normalizeOptionalString(enginePackage)
+            )
+        }
+
+        override suspend fun setTtsVoiceName(voiceName: String?) {
+            state.value = state.value.copy(
+                ttsVoiceName = UserSettings.normalizeOptionalString(voiceName)
+            )
+        }
+
+        override suspend fun setTtsSelection(enginePackage: String?, voiceName: String?) {
+            state.value = state.value.copy(
+                ttsEnginePackage = UserSettings.normalizeOptionalString(enginePackage),
+                ttsVoiceName = UserSettings.normalizeOptionalString(voiceName)
+            )
         }
 
         override suspend fun setOnboardingCompleted(completed: Boolean) {

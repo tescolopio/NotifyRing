@@ -18,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
@@ -75,6 +76,7 @@ fun CaregiverSettingsScreen(
     settingsRepository: SettingsRepository,
     alertCallLogStore: AlertCallLogStore,
     onNavigateBack: () -> Unit,
+    onOpenVoiceSpeech: () -> Unit = {},
     onRerunOnboarding: () -> Unit
 ) {
     val context = LocalContext.current
@@ -250,6 +252,44 @@ fun CaregiverSettingsScreen(
                                 },
                                 valueRange = UserSettings.MIN_SPEECH_RATE..UserSettings.MAX_SPEECH_RATE,
                                 steps = 29
+                            )
+                        }
+                    }
+                }
+            }
+
+            item(key = "voice_section") {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(18.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(18.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.settings_section_voice),
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                        Text(
+                            text = stringResource(R.string.settings_voice_desc),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Button(
+                            onClick = onOpenVoiceSpeech,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 64.dp),
+                            shape = RoundedCornerShape(14.dp)
+                        ) {
+                            Icon(imageVector = Icons.Rounded.PlayArrow, contentDescription = null)
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = stringResource(R.string.settings_voice_button),
+                                style = MaterialTheme.typography.labelLarge
                             )
                         }
                     }

@@ -29,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Phone
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Button
@@ -77,6 +78,7 @@ import kotlinx.coroutines.withContext
 fun OnboardingWizardScreen(
     settingsRepository: SettingsRepository,
     localCallManager: LocalCallManager,
+    onOpenVoiceSpeech: () -> Unit = {},
     onOnboardingComplete: () -> Unit
 ) {
     val context = LocalContext.current
@@ -311,7 +313,8 @@ fun OnboardingWizardScreen(
                                     wizardState = OnboardingStateMachine.markTestCallTriggered(
                                         wizardState
                                     )
-                                }
+                                },
+                                onOpenVoiceSpeech = onOpenVoiceSpeech
                             )
                         }
 
@@ -757,7 +760,8 @@ internal fun AppToggleRow(
 @Composable
 private fun TestCallStepContent(
     triggered: Boolean,
-    onTriggerTestCall: () -> Unit
+    onTriggerTestCall: () -> Unit,
+    onOpenVoiceSpeech: () -> Unit
 ) {
     val statusColors = LocalNotifyRingStatusColors.current
     Text(
@@ -779,6 +783,21 @@ private fun TestCallStepContent(
         Spacer(modifier = Modifier.width(12.dp))
         Text(
             text = stringResource(R.string.onboarding_test_action),
+            style = MaterialTheme.typography.labelLarge
+        )
+    }
+
+    OutlinedButton(
+        onClick = onOpenVoiceSpeech,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 64.dp),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Icon(imageVector = Icons.Rounded.PlayArrow, contentDescription = null)
+        Spacer(modifier = Modifier.width(10.dp))
+        Text(
+            text = stringResource(R.string.onboarding_test_voice_button),
             style = MaterialTheme.typography.labelLarge
         )
     }

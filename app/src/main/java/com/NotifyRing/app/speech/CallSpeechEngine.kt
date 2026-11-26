@@ -44,14 +44,27 @@ sealed interface SpeechEngineState {
 }
 
 /**
+ * Observable state of standalone voice previews triggered from the Voice & Speech screen,
+ * strictly isolated from active Core-Telecom call speech state.
+ */
+sealed interface VoicePreviewState {
+    data object Idle : VoicePreviewState
+    data class Loading(val voiceName: String?) : VoicePreviewState
+    data class Speaking(val voiceName: String?) : VoicePreviewState
+    data class Error(val message: String) : VoicePreviewState
+}
+
+/**
  * Coordinates alert call speech synthesis over Core-Telecom voice channels:
  * - Warms up [TtsEngineAdapter] immediately on [onCallRinging] and gates playback behind a
  *   bounded [CompletableDeferred] (`initTimeoutMs = 3_000L`).
  * - Optionally switches earpiece audio to speaker on answer when `autoSpeakerEnabled == true`
  *   without ever overriding active Bluetooth or wired headsets.
- * - Inserts a cancellable `1_500L` ms post-answer lead-in pause before speaking at `speechRate`.
+ * - Inserts a cancellable `1_500L` ms post-answer lead-in pause before speaking with the saved
+ *   engine, offline voice, `speechRate`, and `speechPitch`.
  * - Immediately stops playback on [onCallHeld] (`onSetInactive` cellular preemption).
- * - Supports [repeatMessage] replay and deterministic `stop()` + `shutdown()` cleanup on [onCallEnded].
+ * - Supports [repeatMessage] replay, standalone isolated [previewVoice] / [stopPreview], and
+ *   deterministic `stop()` + `shutdown()` cleanup on [onCallEnded].
  */
 class CallSpeechEngine(
     private val ttsAdapter: TtsEngineAdapter,
@@ -63,13 +76,17 @@ class CallSpeechEngine(
     val initTimeoutMs: Long = DEFAULT_INIT_TIMEOUT_MS,
     val leadInDelayMs: Long = DEFAULT_LEAD_IN_DELAY_MS,
     val endpointWaitTimeoutMs: Long = DEFAULT_ENDPOINT_WAIT_TIMEOUT_MS,
-    private val clock: () -> Long = System::currentTimeMillis
+    private val clock: () -> Long = System::currentTimeMillis,
+    private val previewAdapterFactory: (() -> TtsEngineAdapter)? = null
 ) : CallLifecycleListener {
 
     private val engineScope = CoroutineScope(SupervisorJob() + dispatcher)
 
     private val _speechState = MutableStateFlow<SpeechEngineState>(SpeechEngineState.Idle)
     val speechState: StateFlow<SpeechEngineState> = _speechState.asStateFlow()
+
+    private val _previewState = MutableStateFlow<VoicePreviewState>(VoicePreviewState.Idle)
+    val previewState: StateFlow<VoicePreviewState> = _previewState.asStateFlow()
 
     private var activeCallId: UUID? = null
     private var activePayload: AlertPayload? = null
@@ -79,12 +96,19 @@ class CallSpeechEngine(
     private var hasRecordedSpokenAlert: Boolean = false
 
     private var initDeferred: CompletableDeferred<Boolean>? = null
+    private var warmedEnginePackage: String? = null
     private var playbackJob: Job? = null
     private var activeUtteranceId: String? = null
     private var utteranceSequence: Long = 0L
 
+    private var previewJob: Job? = null
+    private var previewAdapter: TtsEngineAdapter? = null
+    private var previewGeneration: Long = 0L
+
     override fun onCallRinging(callId: UUID, payload: AlertPayload) {
         engineScope.launch {
+            stopPreviewInternal()
+
             if (activeCallId != null && activeCallId != callId) {
                 playbackJob?.cancel()
                 playbackJob = null
@@ -105,12 +129,17 @@ class CallSpeechEngine(
             if (!isAnswered) {
                 _speechState.value = SpeechEngineState.WarmingUp(callId)
             }
-            ensureWarmupStarted()
+            val settings = readSettingsSafely()
+            if (activeCallId == callId) {
+                ensureWarmupStarted(settings.ttsEnginePackage)
+            }
         }
     }
 
     override fun onCallAnswered(callId: UUID, payload: AlertPayload) {
         engineScope.launch {
+            stopPreviewInternal()
+
             if (activeCallId != null && activeCallId != callId) {
                 playbackJob?.cancel()
                 playbackJob = null
@@ -141,7 +170,12 @@ class CallSpeechEngine(
 
             playbackJob?.cancel()
             playbackJob = engineScope.launch {
-                val deferred = ensureWarmupStarted()
+                val initialSettings = readSettingsSafely()
+                if (activeCallId != callId || isHeld) {
+                    return@launch
+                }
+
+                val deferred = ensureWarmupStarted(initialSettings.ttsEnginePackage)
                 if (!deferred.isCompleted) {
                     _speechState.value = SpeechEngineState.WarmingUp(callId)
                 }
@@ -156,6 +190,7 @@ class CallSpeechEngine(
                 if (initReady != true) {
                     if (initDeferred === deferred) {
                         initDeferred = null
+                        warmedEnginePackage = null
                     }
                     runCatching { ttsAdapter.stop() }
                     _speechState.value = SpeechEngineState.Error(
@@ -198,7 +233,9 @@ class CallSpeechEngine(
                     callId = callId,
                     payload = payload,
                     script = script,
-                    speechRate = settings.speechRate
+                    speechRate = settings.speechRate,
+                    speechPitch = settings.speechPitch,
+                    voiceName = settings.ttsVoiceName
                 )
             }
         }
@@ -247,7 +284,8 @@ class CallSpeechEngine(
 
     /**
      * Replays the currently active call's formatted script from the beginning at the
-     * configured `speechRate`. Ignored when no call is active, unanswered, or held.
+     * configured engine, voice, `speechRate`, and `speechPitch`. Ignored when no call
+     * is active, unanswered, or held.
      */
     fun repeatMessage() {
         engineScope.launch {
@@ -263,7 +301,12 @@ class CallSpeechEngine(
             runCatching { ttsAdapter.stop() }
 
             playbackJob = engineScope.launch {
-                val deferred = ensureWarmupStarted()
+                val settings = readSettingsSafely()
+                if (activeCallId != callId || isHeld) {
+                    return@launch
+                }
+
+                val deferred = ensureWarmupStarted(settings.ttsEnginePackage)
                 if (!deferred.isCompleted) {
                     _speechState.value = SpeechEngineState.WarmingUp(callId)
                 }
@@ -278,6 +321,7 @@ class CallSpeechEngine(
                 if (initReady != true) {
                     if (initDeferred === deferred) {
                         initDeferred = null
+                        warmedEnginePackage = null
                     }
                     runCatching { ttsAdapter.stop() }
                     _speechState.value = SpeechEngineState.Error(
@@ -290,19 +334,170 @@ class CallSpeechEngine(
                     return@launch
                 }
 
-                val settings = readSettingsSafely()
-                if (activeCallId != callId || isHeld) {
-                    return@launch
-                }
-
                 startUtterance(
                     callId = callId,
                     payload = payload,
                     script = script,
-                    speechRate = settings.speechRate
+                    speechRate = settings.speechRate,
+                    speechPitch = settings.speechPitch,
+                    voiceName = settings.ttsVoiceName
                 )
             }
         }
+    }
+
+    /**
+     * Plays a standalone voice sample using an isolated preview [TtsEngineAdapter]
+     * (never sharing or mutating active Core-Telecom call TTS state).
+     */
+    fun previewVoice(
+        enginePackage: String?,
+        voiceName: String?,
+        rate: Float,
+        pitch: Float,
+        sampleText: String = DEFAULT_PREVIEW_SAMPLE_TEXT
+    ) {
+        engineScope.launch {
+            if (activeCallId != null) {
+                stopPreviewInternal()
+                return@launch
+            }
+
+            stopPreviewInternal()
+
+            val factory = previewAdapterFactory
+            if (factory == null) {
+                _previewState.value = VoicePreviewState.Error("Voice preview unavailable")
+                return@launch
+            }
+
+            val generation = ++previewGeneration
+            val normalizedEngine = UserSettings.normalizeOptionalString(enginePackage)
+            val normalizedVoice = UserSettings.normalizeOptionalString(voiceName)
+            val effectiveRate = UserSettings.clampSpeechRate(rate)
+            val effectivePitch = UserSettings.clampSpeechPitch(pitch)
+            val textToSpeak = sampleText.trim().ifEmpty { DEFAULT_PREVIEW_SAMPLE_TEXT }
+
+            _previewState.value = VoicePreviewState.Loading(normalizedVoice)
+
+            val adapter = try {
+                factory.invoke()
+            } catch (ce: CancellationException) {
+                throw ce
+            } catch (e: Exception) {
+                _previewState.value = VoicePreviewState.Error(
+                    e.message ?: "Unable to start voice preview"
+                )
+                return@launch
+            }
+            previewAdapter = adapter
+
+            previewJob = engineScope.launch {
+                val initDeferredLocal = CompletableDeferred<Boolean>()
+                try {
+                    adapter.initialize(enginePackage = normalizedEngine) { ready ->
+                        initDeferredLocal.complete(ready)
+                    }
+                } catch (ce: CancellationException) {
+                    throw ce
+                } catch (_: Exception) {
+                    initDeferredLocal.complete(false)
+                }
+
+                val ready = withTimeoutOrNull(initTimeoutMs) {
+                    initDeferredLocal.await()
+                }
+
+                if (previewGeneration != generation || activeCallId != null) {
+                    return@launch
+                }
+
+                if (ready != true) {
+                    stopPreviewInternal()
+                    _previewState.value = VoicePreviewState.Error(
+                        if (ready == null) {
+                            "Voice preview timed out"
+                        } else {
+                            "Voice preview initialization failed"
+                        }
+                    )
+                    return@launch
+                }
+
+                runCatching { adapter.setVoice(normalizedVoice) }
+                runCatching { adapter.setSpeechRate(effectiveRate) }
+                runCatching { adapter.setSpeechPitch(effectivePitch) }
+
+                val utteranceId = "preview-$generation"
+                _previewState.value = VoicePreviewState.Speaking(normalizedVoice)
+
+                val accepted = try {
+                    adapter.speak(
+                        utteranceId = utteranceId,
+                        text = textToSpeak,
+                        onStart = {
+                            engineScope.launch {
+                                if (previewGeneration == generation && activeCallId == null) {
+                                    _previewState.value = VoicePreviewState.Speaking(normalizedVoice)
+                                }
+                            }
+                        },
+                        onDone = {
+                            engineScope.launch {
+                                if (previewGeneration == generation) {
+                                    stopPreviewInternal()
+                                }
+                            }
+                        },
+                        onError = { detail ->
+                            engineScope.launch {
+                                if (previewGeneration == generation) {
+                                    stopPreviewInternal()
+                                    _previewState.value = VoicePreviewState.Error(
+                                        detail ?: "Voice preview failed"
+                                    )
+                                }
+                            }
+                        }
+                    )
+                } catch (ce: CancellationException) {
+                    throw ce
+                } catch (e: Exception) {
+                    stopPreviewInternal()
+                    _previewState.value = VoicePreviewState.Error(
+                        e.message ?: "Voice preview failed"
+                    )
+                    return@launch
+                }
+
+                if (!accepted) {
+                    stopPreviewInternal()
+                    _previewState.value = VoicePreviewState.Error("Voice preview rejected")
+                }
+            }
+        }
+    }
+
+    /**
+     * Immediately stops and releases any active voice preview without touching active call TTS.
+     */
+    fun stopPreview() {
+        engineScope.launch {
+            stopPreviewInternal()
+        }
+    }
+
+    private fun stopPreviewInternal() {
+        previewGeneration += 1L
+        previewJob?.cancel()
+        previewJob = null
+        val adapter = previewAdapter
+        previewAdapter = null
+        if (adapter != null) {
+            runCatching { adapter.stop() }
+            runCatching { adapter.shutdown() }
+        }
+        _previewState.value = VoicePreviewState.Idle
     }
 
     override fun onCallEnded(
@@ -333,6 +528,7 @@ class CallSpeechEngine(
 
             initDeferred?.cancel()
             initDeferred = null
+            warmedEnginePackage = null
 
             activeCallId = null
             activePayload = null
@@ -349,19 +545,26 @@ class CallSpeechEngine(
     }
 
     fun close() {
+        stopPreviewInternal()
         engineScope.cancel()
     }
 
-    private fun ensureWarmupStarted(): CompletableDeferred<Boolean> {
+    private fun ensureWarmupStarted(enginePackage: String? = null): CompletableDeferred<Boolean> {
+        val normalizedEngine = UserSettings.normalizeOptionalString(enginePackage)
         val existing = initDeferred
-        if (existing != null && (!existing.isCompleted || existing.completedSuccessfully())) {
+        if (
+            existing != null &&
+            warmedEnginePackage == normalizedEngine &&
+            (!existing.isCompleted || existing.completedSuccessfully())
+        ) {
             return existing
         }
 
         val deferred = CompletableDeferred<Boolean>()
         initDeferred = deferred
+        warmedEnginePackage = normalizedEngine
         try {
-            ttsAdapter.initialize { ready ->
+            ttsAdapter.initialize(enginePackage = normalizedEngine) { ready ->
                 deferred.complete(ready)
             }
         } catch (ce: CancellationException) {
@@ -388,7 +591,8 @@ class CallSpeechEngine(
         } catch (_: Exception) {
             UserSettings(
                 autoSpeakerEnabled = false,
-                speechRate = UserSettings.DEFAULT_SPEECH_RATE
+                speechRate = UserSettings.DEFAULT_SPEECH_RATE,
+                speechPitch = UserSettings.DEFAULT_SPEECH_PITCH
             )
         }
     }
@@ -459,10 +663,15 @@ class CallSpeechEngine(
         callId: UUID,
         payload: AlertPayload,
         script: String,
-        speechRate: Float
+        speechRate: Float,
+        speechPitch: Float,
+        voiceName: String?
     ) {
         val effectiveRate = UserSettings.clampSpeechRate(speechRate)
+        val effectivePitch = UserSettings.clampSpeechPitch(speechPitch)
+        runCatching { ttsAdapter.setVoice(voiceName) }
         runCatching { ttsAdapter.setSpeechRate(effectiveRate) }
+        runCatching { ttsAdapter.setSpeechPitch(effectivePitch) }
 
         utteranceSequence += 1L
         val utteranceId = "call-$callId-$utteranceSequence"
@@ -555,6 +764,8 @@ class CallSpeechEngine(
         const val DEFAULT_INIT_TIMEOUT_MS: Long = 3_000L
         const val DEFAULT_LEAD_IN_DELAY_MS: Long = 1_500L
         const val DEFAULT_ENDPOINT_WAIT_TIMEOUT_MS: Long = 500L
+        const val DEFAULT_PREVIEW_SAMPLE_TEXT: String =
+            "Hello. This is how NotifyRing will read your alert calls."
 
         private const val MAX_LOG_PREVIEW_CHARS: Int = 200
         private const val SPOKEN_LOG_DISCONNECT_REASON: String = "SPOKEN"
